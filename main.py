@@ -16,7 +16,7 @@ FFMPEG_OPTIONS = {
         '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
 }
-MUSIC_FOLDER = './music'
+MUSIC_FOLDER = 'music'
 
 timezone = pytz.timezone('Europe/London')
 
