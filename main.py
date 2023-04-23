@@ -6,10 +6,12 @@ from utils import create_embed, handle_error
 import os
 import sys
 
+# opus.load_opus()
+
 ADMINS = [915670836357247006, 658650587679948820, 1015577382826020894]
 FFMPEG_OPTIONS = {
     'before_options':
-    '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+        '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
 }
 BASE_API = "https://acmusicext.com/static"
@@ -73,28 +75,28 @@ async def ping(ctx):
         embed = discord.Embed(
             title="PING",
             description=
-            f":ping_pong: Pong! Bot's latency  is **{(bot.latency *1000)}** ms!",
+            f":ping_pong: Pong! Bot's latency  is **{(bot.latency * 1000)}** ms!",
             color=0x44FF44,
         )
     elif round(bot.latency * 1000) <= 100:
         embed = discord.Embed(
             title="PING",
             description=
-            f":ping_pong: Pong! Bot's latency  is **{round(bot.latency *1000)}** ms!",
+            f":ping_pong: Pong! Bot's latency  is **{round(bot.latency * 1000)}** ms!",
             color=0xFFD000,
         )
     elif round(bot.latency * 1000) <= 200:
         embed = discord.Embed(
             title="PING",
             description=
-            f":ping_pong: Pong! Bot's latency  is **{round(bot.latency *1000)}** ms!",
+            f":ping_pong: Pong! Bot's latency  is **{round(bot.latency * 1000)}** ms!",
             color=0xFF6600,
         )
     else:
         embed = discord.Embed(
             title="PING",
             description=
-            f":ping_pong: Pong! Bot's latency  is **{round(bot.latency *1000)}** ms!",
+            f":ping_pong: Pong! Bot's latency  is **{round(bot.latency * 1000)}** ms!",
             color=0x990000,
         )
     await ctx.reply(embed=embed)
@@ -103,8 +105,14 @@ async def ping(ctx):
 @bot.hybrid_command(name="join",
                     description="Join a vc",
                     with_app_command=True)
-async def join(ctx, channel: discord.VoiceChannel):
+async def join(ctx, channel: discord.VoiceChannel = None):
     await ctx.defer(ephemeral=False)
+
+    if not channel:
+        channel = ctx.author.voice.channel
+        if not channel:
+            return await ctx.reply(title='Could not join VC',
+                                   description='Make sure to specify a voice channel or be in a vc')
 
     await channel.connect(reconnect=True)
     return await ctx.reply(

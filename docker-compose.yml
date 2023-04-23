@@ -1,0 +1,8 @@
+version: "3.8"
+services:
+    main:
+        build: .
+        container_name: Animal-Crossing-Music-Discord-Bot
+        environment:
+            - BOT_TOKEN
+        restart: always
