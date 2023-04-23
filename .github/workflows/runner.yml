@@ -1,0 +1,22 @@
+name: Docker Runner
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Container
+        run: docker compose up -d --build
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Cleanup Unused Images
+        run: docker image prune -f
