@@ -1,9 +1,11 @@
 import discord
 from discord.ext import commands
 from discord import FFmpegPCMAudio, PCMVolumeTransformer, opus
-from utils import create_embed, handle_error
+from utils import create_embed, handle_error, NoVCError
 
+from datetime import datetime
 import os
+import pytz
 import sys
 
 # opus.load_opus()
@@ -14,14 +16,15 @@ FFMPEG_OPTIONS = {
         '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
 }
-BASE_API = "https://acmusicext.com/static"
+MUSIC_FOLDER = './music'
+
+timezone = pytz.timezone('Europe/London')
 
 
 class Bot(commands.Bot):
 
     def __init__(self):
         intents = discord.Intents.default()
-        intents.message_content = True
         super().__init__(command_prefix="ac!", intents=intents)
 
     async def setup_hook(self):
@@ -41,12 +44,6 @@ async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.watching,
                                 name="It is 7pm and sunny")
     await bot.change_presence(status=discord.Status.online, activity=activity)
-
-
-@bot.hybrid_command(name="test", description="Test", with_app_command=True)
-async def test(ctx):
-    await ctx.defer(ephemeral=False)
-    return await ctx.reply("works!")
 
 
 @bot.hybrid_command(name="restart",
@@ -131,11 +128,16 @@ async def play(ctx):
     voice_client = ctx.guild.voice_client
 
     if not voice_client:
+        if not voice_channel:
+            raise NoVCError()
         voice_client = await voice_channel.connect()
 
-    url = f"{BASE_API}/new-horizons/sunny/7pm.ogg"
+    current_time = datetime.now(timezone) if timezone else datetime.now()
+    hour = current_time.hour
 
-    voice_client.play(FFmpegPCMAudio(url))
+    tune = f"{MUSIC_FOLDER}/new-horizons/sunny/{hour}.ogg"
+
+    voice_client.play(FFmpegPCMAudio(tune))
 
     await ctx.reply(embed=await create_embed(
         title='ACNH 5pm Sunny',

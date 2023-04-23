@@ -17,6 +17,7 @@ pafy = "^0.5.5"
 ffmpeg = "1.4"
 opuslib = "^3.0.1"
 python-dotenv = "^1.0.0"
+pytz = "^2023.3"
 
 [tool.poetry.dev-dependencies]
 debugpy = "^1.6.2"
