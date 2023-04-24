@@ -1,14 +1,12 @@
 import discord
 from discord.ext import commands
-from discord import FFmpegPCMAudio, PCMVolumeTransformer, opus
+from discord import FFmpegPCMAudio
 from utils import create_embed, handle_error, NoVCError
 
 from datetime import datetime
 import os
 import pytz
 import sys
-
-# opus.load_opus()
 
 ADMINS = [915670836357247006, 658650587679948820, 1015577382826020894]
 FFMPEG_OPTIONS = {
