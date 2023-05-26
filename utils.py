@@ -1,5 +1,9 @@
 import discord
 from discord.ext import commands
+from datetime import datetime
+import pytz
+
+timezone = pytz.timezone('Europe/London')
 
 
 class NoVCError(commands.CommandError):
@@ -38,3 +42,10 @@ async def handle_error(ctx, error, ephemeral=True):
         await ctx.reply(
             embed=await create_embed(description=error), ephemeral=ephemeral
         )
+
+
+def get_string_time():
+    current_time = datetime.now(timezone) if timezone else datetime.now()
+    hour = current_time.hour % 12
+    am_pm = "am" if current_time.hour < 12 else "pm"
+    return [f"{hour}{am_pm}", hour]

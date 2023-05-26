@@ -1,7 +1,7 @@
 import discord
-from discord.ext import commands
-from discord import FFmpegPCMAudio
-from utils import create_embed, handle_error, NoVCError
+from discord.ext import commands, tasks
+from discord import FFmpegPCMAudio, PCMVolumeTransformer, opus
+from utils import create_embed, handle_error, NoVCError, get_string_time
 
 from datetime import datetime
 import asyncio
@@ -11,13 +11,15 @@ import pytz
 import random
 import sys
 
+# opus.load_opus()
+
 ADMINS = [915670836357247006, 658650587679948820, 1015577382826020894]
 FFMPEG_OPTIONS = {
     'before_options':
         '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
 }
-MUSIC_FOLDER = f'{os.getcwd()}/music'
+MUSIC_FOLDER = 'music'
 GAMES = ['animal-crossing', 'new-horizons', 'new-leaf', 'wild-world']
 
 timezone = pytz.timezone('Europe/London')
@@ -43,9 +45,14 @@ bot = Bot()
 @bot.event
 async def on_ready():
     print("Ready")
-    activity = discord.Activity(type=discord.ActivityType.watching,
-                                name="It is 7pm and sunny")
-    await bot.change_presence(status=discord.Status.online, activity=activity)
+    time = get_string_time()[0]
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=f"AC {time} music"))
+
+
+@tasks.loop(minutes=5)
+async def update_presence():
+    time = get_string_time()[0]
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=f"AC {time} music"))
 
 
 @bot.hybrid_command(name="restart",
@@ -111,13 +118,13 @@ async def join(ctx, channel: discord.VoiceChannel = None):
         channel = ctx.author.voice.channel
         if not channel:
             return await ctx.reply(title='Could not join VC',
-                                   description='Make sure to specify a voice channel or be in a vc')
+        description='Make sure to specify a voice channel or be in a vc')
 
     await channel.connect(reconnect=True)
     return await ctx.reply(
-        embed=await create_embed(title='Success',
-                                 description='Joined voice channel',
-                                 color=discord.Color.green()))
+embed=await create_embed(title='Success',
+description='Joined voice channel',
+color=discord.Color.green()))
 
 
 @bot.hybrid_command(name='play', description="Start playing music", with_app_command=True)
@@ -131,22 +138,19 @@ async def play(ctx):
             raise NoVCError()
         voice_client = await voice_channel.connect()
 
-    current_time = datetime.now(timezone) if timezone else datetime.now()
-
-    async def play_music(current_hour):
+    async def play_music():
         while True:
             game = random.choice(GAMES)
-            hour = current_hour % 12
-            am_pm = "am" if current_hour < 12 else "pm"
+            time, current_hour = get_string_time()
 
-            tune = f"{MUSIC_FOLDER}/{game}/sunny/{hour}{am_pm}.ogg"
+            tune = f"{MUSIC_FOLDER}/{game}/sunny/{time}.ogg"
 
             voice_client.play(FFmpegPCMAudio(tune))
             duration = audiofile.duration(tune)
 
             await ctx.send(embed=await create_embed(
                 title=f'Started playing {" ".join(word.capitalize() for word in game.split("-"))} music',
-                description=f"It is {hour}{am_pm} and sunny",
+                description=f"It is {time} and sunny",
                 color=discord.Color.green()
             ))
 
@@ -157,14 +161,12 @@ async def play(ctx):
             if current_hour != new_hour or voice_channel != voice_client.channel:
                 break
 
-            current_hour = new_hour
-
         # Disconnect from the voice channel
         await voice_client.disconnect()
         await ctx.send(embed=await create_embed(title="Stopping",
                                                 description="You left vc or the hour changed. Stopping playing music"))
 
-    bot.loop.create_task(play_music(current_time.hour))
+    bot.loop.create_task(play_music())
 
 
 @bot.hybrid_command(name='stop', description='Stop playing music', with_app_command=True)
