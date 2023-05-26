@@ -4,8 +4,11 @@ from discord import FFmpegPCMAudio
 from utils import create_embed, handle_error, NoVCError
 
 from datetime import datetime
+import asyncio
+import audiofile
 import os
 import pytz
+import random
 import sys
 
 ADMINS = [915670836357247006, 658650587679948820, 1015577382826020894]
@@ -15,7 +18,7 @@ FFMPEG_OPTIONS = {
     'options': '-vn'
 }
 MUSIC_FOLDER = f'{os.getcwd()}/music'
-
+GAMES = ['animal-crossing', 'new-horizons', 'new-leaf', 'wild-world']
 
 timezone = pytz.timezone('Europe/London')
 
@@ -117,32 +120,74 @@ async def join(ctx, channel: discord.VoiceChannel = None):
                                  color=discord.Color.green()))
 
 
-@bot.hybrid_command(name='play',
-                    description="Start playing music",
-                    with_app_command=True)
+@bot.hybrid_command(name='play', description="Start playing music", with_app_command=True)
 async def play(ctx):
     await ctx.defer(ephemeral=False)
 
     voice_channel = ctx.author.voice.channel
     voice_client = ctx.guild.voice_client
-
     if not voice_client:
         if not voice_channel:
             raise NoVCError()
         voice_client = await voice_channel.connect()
 
     current_time = datetime.now(timezone) if timezone else datetime.now()
-    hour = current_time.hour
 
-    tune = f"{MUSIC_FOLDER}/new-horizons/sunny/{hour}.ogg"
+    async def play_music(current_hour):
+        while True:
+            game = random.choice(GAMES)
+            hour = current_hour % 12
+            am_pm = "am" if current_hour < 12 else "pm"
 
-    voice_client.play(FFmpegPCMAudio(tune))
+            tune = f"{MUSIC_FOLDER}/{game}/sunny/{hour}{am_pm}.ogg"
 
-    await ctx.reply(embed=await create_embed(
-        title='ACNH 5pm Sunny',
-        description=
-        "For now, this track is hardcoded. This will be dynamic later and there will be settings for servers and possibly users to change location (for live weather), game and timezone."
-    ))
+            voice_client.play(FFmpegPCMAudio(tune))
+            duration = audiofile.duration(tune)
+
+            await ctx.send(embed=await create_embed(
+                title=f'Started playing {" ".join(word.capitalize() for word in game.split("-"))} music',
+                description=f"It is {hour}{am_pm} and sunny",
+                color=discord.Color.green()
+            ))
+
+            await asyncio.sleep(duration)  # Sleep until the end of the track
+
+            # Check if the bot should continue playing
+            new_hour = datetime.now(timezone).hour
+            if current_hour != new_hour or voice_channel != voice_client.channel:
+                break
+
+            current_hour = new_hour
+
+        # Disconnect from the voice channel
+        await voice_client.disconnect()
+        await ctx.send(embed=await create_embed(title="Stopping",
+                                                description="You left vc or the hour changed. Stopping playing music"))
+
+    bot.loop.create_task(play_music(current_time.hour))
+
+
+@bot.hybrid_command(name='stop', description='Stop playing music', with_app_command=True)
+async def stop(ctx):
+    await ctx.defer(ephemeral=False)
+
+    voice_client = ctx.guild.voice_client
+
+    if voice_client and voice_client.is_playing():
+        voice_client.stop()
+        await voice_client.disconnect()
+
+        await ctx.send(embed=await create_embed(
+            title='Music Stopped',
+            description='The music playback has been stopped.',
+            color=discord.Color.red()
+        ))
+    else:
+        await ctx.send(embed=await create_embed(
+            title='Music Not Playing',
+            description='There is no music currently playing.',
+            color=discord.Color.orange()
+        ))
 
 
 try:
