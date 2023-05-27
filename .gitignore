@@ -4,3 +4,4 @@ venv/
 .upm/
 .env
 .DS_Store
+.vscode/

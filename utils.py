@@ -1,9 +1,10 @@
-import discord
-from discord.ext import commands
 from datetime import datetime
-import pytz
 
-timezone = pytz.timezone('Europe/London')
+import discord
+import pytz
+from discord.ext import commands
+
+timezone = pytz.timezone("Europe/London")
 
 
 class NoVCError(commands.CommandError):
@@ -11,11 +12,10 @@ class NoVCError(commands.CommandError):
 
 
 async def create_embed(
-
-        title="Command failed",
-        description="You don't have permission to use this command",
-        color=discord.Color.red(),
-        **kwargs,
+    title="Command failed",
+    description="You don't have permission to use this command",
+    color=discord.Color.red(),
+    **kwargs,
 ):
     """Returns an embed"""
     embed = discord.Embed(title=title, description=description, color=color, **kwargs)
@@ -36,8 +36,11 @@ async def handle_error(ctx, error, ephemeral=True):
             ephemeral=ephemeral,
         )
     elif isinstance(error, NoVCError):
-        await ctx.reply(embed=await create_embed(
-            description="I must be in a voice channel to play music and I wasn't able to join your vc."))
+        await ctx.reply(
+            embed=await create_embed(
+                description="I must be in a voice channel to play music and I wasn't able to join your vc."
+            )
+        )
     else:
         await ctx.reply(
             embed=await create_embed(description=error), ephemeral=ephemeral
@@ -45,7 +48,9 @@ async def handle_error(ctx, error, ephemeral=True):
 
 
 def get_string_time():
-    current_time = datetime.now(timezone) if timezone else datetime.now()
-    hour = current_time.hour % 12
-    am_pm = "am" if current_time.hour < 12 else "pm"
-    return [f"{hour}{am_pm}", hour]
+    hour = datetime.now(timezone).hour if timezone else datetime.now().hour
+    hour_12 = hour % 12
+    if hour_12 == 0:
+        hour_12 = 12
+    am_pm = "am" if hour < 12 else "pm"
+    return [f"{hour_12}{am_pm}", hour]
