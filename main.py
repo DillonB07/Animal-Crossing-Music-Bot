@@ -109,28 +109,30 @@ async def restart(interaction: Interaction):
     description="Check bot latency",
 )
 async def ping(interaction: Interaction):
-    if round(client.latency * 1000) <= 50:
+    latency = round(client.latency * 1000)
+    desc = (f":ping_pong: Pong! Bot's latency is `{latency}` ms!",)
+    if round(latency * 1000) <= 50:
         embed = discord.Embed(
             title="PING",
-            description=f":ping_pong: Pong! Bot's latency  is **{(client.latency * 1000)}** ms!",
+            description=desc,
             color=0x44FF44,
         )
-    elif round(client.latency * 1000) <= 100:
+    elif round(latency * 1000) <= 100:
         embed = discord.Embed(
             title="PING",
-            description=f":ping_pong: Pong! Bot's latency  is **{round(client.latency * 1000)}** ms!",
+            description=desc,
             color=0xFFD000,
         )
-    elif round(client.latency * 1000) <= 200:
+    elif round(latency * 1000) <= 200:
         embed = discord.Embed(
             title="PING",
-            description=f":ping_pong: Pong! Bot's latency  is **{round(client.latency * 1000)}** ms!",
+            description=desc,
             color=0xFF6600,
         )
     else:
         embed = discord.Embed(
             title="PING",
-            description=f":ping_pong: Pong! Bot's latency  is **{round(client.latency * 1000)}** ms!",
+            description=desc,
             color=0x990000,
         )
     await interaction.response.send_message(embed=embed)
@@ -213,10 +215,11 @@ async def play(interaction: Interaction):
                 )
             voice_client.play(FFmpegPCMAudio(tune))
             duration = audiofile.duration(tune)
+            name = " ".join(word.capitalize() for word in game.split("-"))
 
             await interaction.response.send_message(
                 embed=await create_embed(
-                    title=f'Started playing {" ".join(word.capitalize() for word in game.split("-"))} music',
+                    title=f"Started playing {name} music",
                     description=f"It is {time} and sunny",
                     color=discord.Color.green(),
                 )
