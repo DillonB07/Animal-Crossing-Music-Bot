@@ -5,4 +5,5 @@ services:
         container_name: Animal-Crossing-Music-Discord-Bot
         environment:
             - BOT_TOKEN
+            - DB_URI
         restart: always

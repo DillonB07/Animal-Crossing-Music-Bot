@@ -17,6 +17,7 @@ jobs:
         run: docker compose up -d --build
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DB_RUI: ${{secrets.DB_URI}}
 
       - name: Cleanup Unused Images
         run: docker image prune -f
