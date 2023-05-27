@@ -197,6 +197,14 @@ async def play(interaction: Interaction):
         raise NoVCError()
     await voice_channel.connect(reconnect=True)
     voice_client = guild.voice_client
+    
+    await interaction.response.send_message(
+        embed= await create_embed(
+            title='Playing Music',
+            description=f'Check {voice_channel.mention} for notifications',
+            color=discord.Color.green()
+        )
+    )
 
     async def play_music():
         while True:
@@ -217,7 +225,10 @@ async def play(interaction: Interaction):
             duration = audiofile.duration(tune)
             name = " ".join(word.capitalize() for word in game.split("-"))
 
-            await interaction.response.send_message(
+            if not voice_channel:
+                raise NoVCError()
+
+            await voice_channel.send(
                 embed=await create_embed(
                     title=f"Started playing {name} music",
                     description=f"It is {time} and sunny",
