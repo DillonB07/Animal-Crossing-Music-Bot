@@ -197,12 +197,12 @@ async def play(interaction: Interaction):
         raise NoVCError()
     await voice_channel.connect(reconnect=True)
     voice_client = guild.voice_client
-    
+
     await interaction.response.send_message(
-        embed= await create_embed(
-            title='Playing Music',
-            description=f'Check {voice_channel.mention} for notifications',
-            color=discord.Color.green()
+        embed=await create_embed(
+            title="Playing Music",
+            description=f"Check {voice_channel.mention} for notifications",
+            color=discord.Color.green(),
         )
     )
 
@@ -230,7 +230,7 @@ async def play(interaction: Interaction):
 
             await voice_channel.send(
                 embed=await create_embed(
-                    title=f"Started playing {name} music",
+                    title=f"Playing {name} Music",
                     description=f"It is {time} and sunny",
                     color=discord.Color.green(),
                 )
