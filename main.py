@@ -8,7 +8,7 @@ import audiofile
 import discord
 import pytz
 from discord import FFmpegPCMAudio, Interaction, app_commands
-from discord.ext import tasks
+from discord.ext import tasks, commands
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -88,6 +88,7 @@ async def on_guild_remove(guild):
 
 
 @client.tree.command(name="restart", description="Restart the bot")
+@commands.has_guild_permissions(administrator=True)
 async def restart(interaction: Interaction):
     if interaction.user.id not in ADMINS:
         await interaction.response.send_message(embed=await create_embed())
@@ -205,21 +206,21 @@ async def play(interaction: Interaction):
     )
 
     async def play_music():
-        if type(voice_client) != discord.VoiceClient:
-            print(type(voice_client))
-            return await interaction.response.send_message(
-                embed=await create_embed(
-                    title="Error",
-                    description="Could not get voice client",
-                )
-            )
-
-        if not voice_channel:
-            raise NoVCError()
-
         while True:
+            if type(voice_client) != discord.VoiceClient:
+                print(type(voice_client))
+                return await interaction.response.send_message(
+                    embed=await create_embed(
+                        title="Error",
+                        description="Could not get voice client",
+                    )
+                )
+
             if voice_channel != voice_client.channel:
                 break
+
+            if not voice_channel:
+                raise NoVCError()
 
             game = random.choice(GAMES)
             server = server_collection.find_one({"id": guild.id})
@@ -245,14 +246,14 @@ async def play(interaction: Interaction):
                 description=f"It is {time} and sunny",
                 color=discord.Color.green(),
             )
-            embed.set_footer(text=f"{round(duration)}s | Using `{tz}`")
+            embed.set_footer(text=f"{round(duration)}s | {tz}")
             await voice_channel.send(embed=embed)
 
             await asyncio.sleep(duration)  # Sleep until the end of the track
 
         # Disconnect from the voice channel
         await voice_client.disconnect()
-        await voice_channel.send(
+        await interaction.response.send_message(
             embed=await create_embed(
                 title="Stopping",
                 description="You left the vc. Stopping playing music",
