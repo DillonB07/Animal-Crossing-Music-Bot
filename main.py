@@ -246,7 +246,8 @@ async def play(interaction: Interaction):
         await interaction.response.send_message(
             embed=await create_embed(
                 title="Stopping",
-                description="You left vc or the hour changed. Stopping playing music",
+                description="You left the vc. Stopping playing music",
+                color=discord.Color.orange(),
             )
         )
 
@@ -285,13 +286,13 @@ async def stop(interaction: Interaction):
             embed=await create_embed(
                 title="Music Stopped",
                 description="The music playback has been stopped.",
-                color=discord.Color.red(),
+                color=discord.Color.green(),
             )
         )
     else:
         return await interaction.response.send_message(
             embed=await create_embed(
-                title="Music Not Playing",
+                title="Not Playing",
                 description="There is no music currently playing.",
                 color=discord.Color.orange(),
             )
@@ -318,7 +319,7 @@ async def time(interaction: Interaction):
             embed=await create_embed(
                 title="Info",
                 description=f'Your timezone is set to `{server.get("timezone", None)}`',
-                color=discord.Color.green(),
+                color=discord.Color.yellow(),
             )
         )
     else:
