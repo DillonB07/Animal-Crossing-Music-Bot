@@ -4,8 +4,6 @@ import discord
 import pytz
 from discord.ext import commands
 
-timezone = pytz.timezone("Europe/London")
-
 
 class NoVCError(commands.CommandError):
     pass
@@ -47,8 +45,9 @@ async def handle_error(interaction: discord.Interaction, error, ephemeral=True):
         )
 
 
-def get_string_time():
-    hour = datetime.now(timezone).hour if timezone else datetime.now().hour
+def get_string_time(timezone: str = 'Europe/London'):
+    tz = pytz.timezone(timezone)
+    hour = datetime.now(tz).hour 
     hour_12 = hour % 12
     if hour_12 == 0:
         hour_12 = 12

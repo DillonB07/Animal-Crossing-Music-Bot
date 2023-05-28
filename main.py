@@ -2,6 +2,7 @@ import asyncio
 import os
 import random
 import sys
+import typing
 
 import audiofile
 import discord
@@ -15,7 +16,6 @@ from pymongo.server_api import ServerApi
 from utils import NoVCError, create_embed, get_string_time, handle_error
 
 load_dotenv()
-# opus.load_opus()
 
 ADMINS = [915670836357247006, 658650587679948820, 1015577382826020894]
 FFMPEG_OPTIONS = {
@@ -24,8 +24,6 @@ FFMPEG_OPTIONS = {
 }
 MUSIC_FOLDER = "music"
 GAMES = ["animal-crossing", "new-horizons", "new-leaf", "wild-world"]
-
-timezone = pytz.timezone("Europe/London")
 
 db_client = MongoClient(os.environ["DB_URI"], server_api=ServerApi("1"))
 db = db_client.data
@@ -207,43 +205,54 @@ async def play(interaction: Interaction):
     )
 
     async def play_music():
+        if type(voice_client) != discord.VoiceClient:
+            print(type(voice_client))
+            return await interaction.response.send_message(
+                embed=await create_embed(
+                    title="Error",
+                    description="Could not get voice client",
+                )
+            )
+
+        if not voice_channel:
+            raise NoVCError()
+
         while True:
+            if voice_channel != voice_client.channel:
+                break
+
             game = random.choice(GAMES)
-            time = get_string_time()[0]
+            server = server_collection.find_one({"id": guild.id})
+            if not server:
+                return await voice_channel.send(
+                    embed=await create_embed(
+                        title="Error",
+                        description="Could not get server info",
+                    )
+                )
+
+            tz = server["timezone"]
+            time = get_string_time(tz)[0]
 
             tune = f"{MUSIC_FOLDER}/{game}/sunny/{time}.ogg"
 
-            if type(voice_client) != discord.VoiceClient:
-                print(type(voice_client))
-                return await interaction.response.send_message(
-                    embed=await create_embed(
-                        title="Error",
-                        description="Could not get voice client",
-                    )
-                )
             voice_client.play(FFmpegPCMAudio(tune))
             duration = audiofile.duration(tune)
             name = " ".join(word.capitalize() for word in game.split("-"))
 
-            if not voice_channel:
-                raise NoVCError()
-
-            await voice_channel.send(
-                embed=await create_embed(
-                    title=f"Playing {name} Music",
-                    description=f"It is {time} and sunny",
-                    color=discord.Color.green(),
-                )
+            embed = await create_embed(
+                title=f"Playing {name} Music",
+                description=f"It is {time} and sunny",
+                color=discord.Color.green(),
             )
+            embed.set_footer(text=f"{round(duration)}s | Using `{tz}`")
+            await voice_channel.send(embed=embed)
 
             await asyncio.sleep(duration)  # Sleep until the end of the track
 
-            if voice_channel != voice_client.channel:
-                break
-
         # Disconnect from the voice channel
         await voice_client.disconnect()
-        await interaction.response.send_message(
+        await voice_channel.send(
             embed=await create_embed(
                 title="Stopping",
                 description="You left the vc. Stopping playing music",
@@ -332,17 +341,53 @@ async def time(interaction: Interaction):
         )
 
 
-# @client.tree(name="set", description="Set a setting")
-# async def set(interaction: Interaction):
-#     pass
+async def timezone_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> typing.List[app_commands.Choice]:
+    timezones = pytz.all_timezones
+    return [
+        app_commands.Choice(name=timezone, value=timezone)
+        for timezone in timezones
+        if current.lower() in timezone.lower()
+    ]
 
 
-# @set.command(name="timezone", description="Set the timezone")
-# @app_commands.describe(
-#     timezone="Timezone for live music",
-# )
-# async def set_timezone(interaction: Interaction, timezone: str):
-#     pass
+@client.tree.command(name="timezone", description="Set your timezone")
+@app_commands.autocomplete(timezone=timezone_autocomplete)
+@app_commands.describe(timezone="Your server's timezone")
+async def timezone(interaction: Interaction, timezone: str):
+    # Check if timezone is in pytz.all_timezones. check case insensitive
+    for tz in pytz.all_timezones:
+        if tz.lower() == timezone.lower():
+            break
+    else:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Invalid timezone",
+                color=discord.Color.red(),
+            )
+        )
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Could not get guild info",
+            )
+        )
+    old_tz = server_collection.find_one_and_update(
+        {"id": guild.id}, {"$set": {"timezone": timezone}}
+    )["timezone"]
+
+    return await interaction.response.send_message(
+        embed=await create_embed(
+            title="Timezone Updated",
+            description=f"Timezone for `{guild.name}` has been changed from `{old_tz}` to `{timezone}`",  # NOQA
+            color=discord.Color.green(),
+        )
+    )
 
 
 try:
