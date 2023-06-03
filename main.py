@@ -8,7 +8,7 @@ import audiofile
 import discord
 import pytz
 from discord import FFmpegPCMAudio, Interaction, app_commands
-from discord.ext import tasks, commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -386,6 +386,38 @@ async def timezone(interaction: Interaction, timezone: str):
         embed=await create_embed(
             title="Timezone Updated",
             description=f"Timezone for `{guild.name}` has been changed from `{old_tz}` to `{timezone}`",  # NOQA
+            color=discord.Color.green(),
+        )
+    )
+
+
+@client.tree.command(name="kk", description="Set when you want KK songs to play")
+@app_commands.describe(setting="When you want KK songs to play")
+@app_commands.choices(
+    setting=[
+        app_commands.Choice(name="Always", value="always"),
+        app_commands.Choice(name="Never", value="never"),
+        app_commands.Choice(name="Default (after 8pm on Saturday)", value="default"),
+    ]
+)
+async def kk(interaction: discord.Interaction, setting: app_commands.Choice[str]):
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Could not get guild info",
+            )
+        )
+    kk = setting.value
+    old_kk = server_collection.find_one_and_update(
+        {"id": guild.id}, {"$set": {"kk": kk}}
+    )["kk"]
+
+    return await interaction.response.send_message(
+        embed=await create_embed(
+            title="Timezone Updated",
+            description=f"KK setting for `{guild.name}` has been changed from `{old_kk}` to `{kk}`",  # NOQA
             color=discord.Color.green(),
         )
     )
