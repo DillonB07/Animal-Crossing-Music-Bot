@@ -48,8 +48,9 @@ async def handle_error(interaction: discord.Interaction, error, ephemeral=True):
 def get_string_time(timezone: str = 'Europe/London'):
     tz = pytz.timezone(timezone)
     hour = datetime.now(tz).hour 
+    day = datetime.now(tz).weekday()
     hour_12 = hour % 12
     if hour_12 == 0:
         hour_12 = 12
     am_pm = "am" if hour < 12 else "pm"
-    return [f"{hour_12}{am_pm}", hour]
+    return [f"{hour_12}{am_pm}", hour, day]

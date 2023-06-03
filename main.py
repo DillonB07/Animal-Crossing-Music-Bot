@@ -136,6 +136,7 @@ async def ping(interaction: Interaction):
         )
     await interaction.response.send_message(embed=embed)
 
+
 @client.tree.command(
     name="play",
     description="Start playing music",
@@ -193,7 +194,6 @@ async def play(interaction: Interaction):
             if not voice_channel:
                 raise NoVCError()
 
-            game = random.choice(GAMES)
             server = server_collection.find_one({"id": guild.id})
             if not server:
                 return await voice_channel.send(
@@ -203,18 +203,29 @@ async def play(interaction: Interaction):
                     )
                 )
 
+            kk = server["kk"]
             tz = server["timezone"]
-            time = get_string_time(tz)[0]
-
-            tune = f"{MUSIC_FOLDER}/{game}/sunny/{time}.ogg"
+            time, hour, day = get_string_time(tz)
+            if kk == "always" or (kk == "default" and hour >= 18 and day == 5):
+                # Get a random kk song from anything in the kk folder
+                regular = False
+                file = random.choice(os.listdir(f"{MUSIC_FOLDER}/kk"))
+                tune = f"{MUSIC_FOLDER}/kk/{file}"
+                name = "K.K."
+            else:
+                game = random.choice(GAMES)
+                regular = True
+                tune = f"{MUSIC_FOLDER}/{game}/sunny/{time}.ogg"
+                name = " ".join(word.capitalize() for word in game.split("-"))
 
             voice_client.play(FFmpegPCMAudio(tune))
             duration = audiofile.duration(tune)
-            name = " ".join(word.capitalize() for word in game.split("-"))
 
             embed = await create_embed(
                 title=f"Playing {name} Music",
-                description=f"It is {time} and sunny",
+                description=f"It is {time} and sunny"
+                if regular
+                else f"Playing {file.strip('.mp3')}",
                 color=discord.Color.green(),
             )
             embed.set_footer(text=f"{round(duration)}s | {tz}")
@@ -368,7 +379,7 @@ async def timezone(interaction: Interaction, timezone: str):
     setting=[
         app_commands.Choice(name="Always", value="always"),
         app_commands.Choice(name="Never", value="never"),
-        app_commands.Choice(name="Default (after 8pm on Saturday)", value="default"),
+        app_commands.Choice(name="Default (after 6pm on Saturday)", value="default"),
     ]
 )
 async def kk(interaction: discord.Interaction, setting: app_commands.Choice[str]):
@@ -387,7 +398,7 @@ async def kk(interaction: discord.Interaction, setting: app_commands.Choice[str]
 
     return await interaction.response.send_message(
         embed=await create_embed(
-            title="Timezone Updated",
+            title="KK Updated",
             description=f"KK setting for `{guild.name}` has been changed from `{old_kk}` to `{kk}`",  # NOQA
             color=discord.Color.green(),
         )
