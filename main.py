@@ -136,35 +136,6 @@ async def ping(interaction: Interaction):
         )
     await interaction.response.send_message(embed=embed)
 
-
-@client.tree.command(
-    name="join",
-    description="Join a vc",
-)
-async def join(interaction: Interaction):
-    if type(interaction.user) != discord.Member:
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Error",
-                description="Something strange happened, please try again",
-            )
-        )
-    voice = interaction.user.voice
-    if not voice:
-        raise NoVCError()
-    channel = voice.channel
-    if not channel:
-        raise NoVCError()
-    await channel.connect(reconnect=True)
-    return await interaction.response.send_message(
-        embed=await create_embed(
-            title="Success",
-            description="Joined voice channel",
-            color=discord.Color.green(),
-        )
-    )
-
-
 @client.tree.command(
     name="play",
     description="Start playing music",
