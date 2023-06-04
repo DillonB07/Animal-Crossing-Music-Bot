@@ -13,7 +13,14 @@ from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-from utils import NoVCError, create_embed, get_string_time, handle_error
+from utils import (
+    NoVCError,
+    create_embed,
+    get_string_time,
+    get_weather,
+    get_weather_type,
+    handle_error,
+)
 
 load_dotenv()
 
@@ -78,6 +85,7 @@ async def on_guild_join(guild):
         "game": "all",
         "weather": "random",
         "kk": "default",
+        "area": "London",
     }
     server_collection.insert_one(server_doc)
 
@@ -213,10 +221,27 @@ async def play(interaction: Interaction):
                 tune = f"{MUSIC_FOLDER}/kk/{file}"
                 name = "K.K."
             else:
-                game = random.choice(GAMES)
+                if server["game"] == "all":
+                    game = random.choice(GAMES)
+                else:
+                    game = server["game"]
+
+                if server["weather"] == "live":
+                    weather = await get_weather(server.get("area", "london"))
+                    code = weather.get("current", {}).get("condition", {}).get("code")
+                    condition = get_weather_type(code)
+                elif server["weather"] == "random":
+                    condition = random.choice(["raining", "sunny", "snowing"])
+                else:
+                    condition = server.get("weather", "sunny")
+
+                if condition == "raining" and game == "animal-crossing":
+                    condition = "snowing"
+
                 regular = True
-                tune = f"{MUSIC_FOLDER}/{game}/sunny/{time}.ogg"
+                tune = f"{MUSIC_FOLDER}/{game}/{condition}/{time}.ogg"
                 name = " ".join(word.capitalize() for word in game.split("-"))
+                file = ""
 
             voice_client.play(FFmpegPCMAudio(tune))
             duration = audiofile.duration(tune)
@@ -398,8 +423,69 @@ async def kk(interaction: discord.Interaction, setting: app_commands.Choice[str]
 
     return await interaction.response.send_message(
         embed=await create_embed(
-            title="KK Updated",
+            title="KK Settings Updated",
             description=f"KK setting for `{guild.name}` has been changed from `{old_kk}` to `{kk}`",  # NOQA
+            color=discord.Color.green(),
+        )
+    )
+
+
+@client.tree.command(name="weather", description="Choose weather type for music")
+@app_commands.describe(
+    setting="Choose if you want live weather, random or specific type"
+)  # NOQA
+@app_commands.choices(
+    setting=[
+        app_commands.Choice(name="Live", value="live"),
+        app_commands.Choice(name="Random", value="random"),
+        app_commands.Choice(name="sunny", value="sunny"),
+        app_commands.Choice(name="Raining", value="raining"),
+        app_commands.Choice(name="Snowy", value="snowing"),
+    ]
+)
+async def weather(interaction: discord.Interaction, setting: app_commands.Choice[str]):
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Could not get guild info",
+            )
+        )
+    weather = setting.value
+    old_weather = server_collection.find_one_and_update(
+        {"id": guild.id}, {"$set": {"weather": weather}}
+    )["weather"]
+
+    return await interaction.response.send_message(
+        embed=await create_embed(
+            title="Weather Settings Updated",
+            description=f"Weather setting for `{guild.name}` has been changed from `{old_weather}` to `{weather}`",  # NOQA
+            color=discord.Color.green(),
+        )
+    )
+
+
+@client.tree.command(name="area", description="Choose area for live weather")
+@app_commands.describe(setting="Post/zip code or city name")  # NOQA
+async def area(interaction: discord.Interaction, setting: app_commands.Choice[str]):
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Could not get guild info",
+            )
+        )
+    area = setting.value
+    old_area = server_collection.find_one_and_update(
+        {"id": guild.id}, {"$set": {"area": area}}
+    )["area"]
+
+    return await interaction.response.send_message(
+        embed=await create_embed(
+            title="Area Settings Updated",
+            description=f"Area setting for `{guild.name}` has been changed from `{old_area}` to `{area}`",  # NOQA
             color=discord.Color.green(),
         )
     )

@@ -1,5 +1,8 @@
+import json
+import os
 from datetime import datetime
 
+import aiohttp
 import discord
 import pytz
 from discord.ext import commands
@@ -45,12 +48,37 @@ async def handle_error(interaction: discord.Interaction, error, ephemeral=True):
         )
 
 
-def get_string_time(timezone: str = 'Europe/London'):
+def get_string_time(timezone: str = "Europe/London"):
     tz = pytz.timezone(timezone)
-    hour = datetime.now(tz).hour 
+    hour = datetime.now(tz).hour
     day = datetime.now(tz).weekday()
     hour_12 = hour % 12
     if hour_12 == 0:
         hour_12 = 12
     am_pm = "am" if hour < 12 else "pm"
     return [f"{hour_12}{am_pm}", hour, day]
+
+
+async def get_weather(area: str = "London"):
+    key = os.getenv("WEATHER_TOKEN")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            f"http://api.weatherapi.com/v1/current.json?key={key}&aqi=no&q={area}"
+        ) as response:
+            return await response.json()
+
+
+def get_weather_type(code: int):
+    with open("data/weather.json") as f:
+        data = json.load(f)
+    for item in data:
+        if item.get("code") == code:
+            if "rain" in item.get("day").lower() or "rain" in item.get("night").lower():
+                return "raining"
+            elif (
+                "snow" in item.get("day").lower() or "snow" in item.get("night").lower()
+            ):
+                return "snowing"
+            else:
+                return "sunny"
+    return "sunny"

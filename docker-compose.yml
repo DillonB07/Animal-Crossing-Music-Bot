@@ -6,4 +6,5 @@ services:
         environment:
             - BOT_TOKEN
             - DB_URI
+            - WEATHER_TOKEN
         restart: always

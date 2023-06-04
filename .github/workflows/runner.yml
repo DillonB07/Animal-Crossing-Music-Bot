@@ -18,6 +18,7 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           DB_URI: ${{secrets.DB_URI}}
+          WEATHER_TOKEN: ${{secrets.WEATHER_TOKEN}}
 
       - name: Cleanup Unused Images
         run: docker image prune -f
