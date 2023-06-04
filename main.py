@@ -468,7 +468,7 @@ async def weather(interaction: discord.Interaction, setting: app_commands.Choice
 
 @client.tree.command(name="area", description="Choose area for live weather")
 @app_commands.describe(setting="Post/zip code or city name")  # NOQA
-async def area(interaction: discord.Interaction, setting: str):
+async def area(interaction: discord.Interaction, area: str):
     guild = interaction.guild
     if not guild:
         return await interaction.response.send_message(
@@ -477,7 +477,6 @@ async def area(interaction: discord.Interaction, setting: str):
                 description="Could not get guild info",
             )
         )
-    area = setting.value
     old_area = server_collection.find_one_and_update(
         {"id": guild.id}, {"$set": {"area": area}}
     )["area"]
