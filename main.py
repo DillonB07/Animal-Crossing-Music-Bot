@@ -501,6 +501,12 @@ async def info(interaction: discord.Interaction):
             )
         )
     data = server_collection.find_one({"id": guild.id})
+
+    if not data:
+        return await interaction.response.send_message(
+            embed=await create_embed(title="Error", description="Failed to fetch data")
+        )
+
     embed = await create_embed(
         title="Server Info",
         description=f'Current settings for the `{data.get("name", "")}` server',
