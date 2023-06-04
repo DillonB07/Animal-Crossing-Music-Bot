@@ -491,6 +491,37 @@ async def area(interaction: discord.Interaction, setting: app_commands.Choice[st
     )
 
 
+@client.tree.command(name="info", description="Get server info")
+async def info(interaction: discord.Interaction):
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Could not get guild info",
+            )
+        )
+    data = server_collection.find_one({"id": guild.id})
+    embed = await create_embed(
+        title="Server Info",
+        description=f'Current settings for the `{data.get("name", "")}` server',
+    )
+    embed.add_field(
+        name="Timezone", value=f'`{data.get("timezone", "Not found")}`', inline=False
+    )
+    embed.add_field(
+        name="Game", value=f'`{data.get("game", "Not found")}`', inline=False
+    )
+    embed.add_field(
+        name="Weather", value=f'`{data.get("weather", "Not found")}`', inline=False
+    )
+    embed.add_field(
+        name="Area", value=f'`{data.get("area", "Not found")}`', inline=False
+    )
+    embed.add_field(name="K.K.", value=f'`{data.get("kk", "Not found")}`', inline=True)
+    return await interaction.response.send_message(embed=embed)  # NOQA
+
+
 try:
     print("Pinging DB")
     db_client.admin.command("ping")
