@@ -468,7 +468,7 @@ async def weather(interaction: discord.Interaction, setting: app_commands.Choice
 
 @client.tree.command(name="area", description="Choose area for live weather")
 @app_commands.describe(setting="Post/zip code or city name")  # NOQA
-async def area(interaction: discord.Interaction, setting: app_commands.Choice[str]):
+async def area(interaction: discord.Interaction, setting: str):
     guild = interaction.guild
     if not guild:
         return await interaction.response.send_message(
