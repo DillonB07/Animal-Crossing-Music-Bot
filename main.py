@@ -7,7 +7,7 @@ import typing
 import audiofile
 import discord
 import pytz
-from discord import FFmpegPCMAudio, Interaction, app_commands
+from discord import FFmpegPCMAudio, Interaction, PCMVolumeTransformer, app_commands
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
@@ -82,6 +82,7 @@ async def on_guild_join(guild):
         "id": guild.id,
         "name": guild.name,
         "timezone": "Europe/London",
+        "volume": "0.3",
         "game": "all",
         "weather": "random",
         "kk": "default",
@@ -243,7 +244,9 @@ async def play(interaction: Interaction):
                 name = " ".join(word.capitalize() for word in game.split("-"))
                 file = ""
 
-            voice_client.play(FFmpegPCMAudio(tune))
+            audio = FFmpegPCMAudio(tune)
+            audio = PCMVolumeTransformer(audio, volume=server.get("volume", 0.3))
+            voice_client.play(audio)
             duration = audiofile.duration(tune)
 
             embed = await create_embed(
@@ -490,6 +493,33 @@ async def area(interaction: discord.Interaction, area: str):
     )
 
 
+@client.tree.command(name="volume", description="Choose music volume")
+@app_commands.describe(vol="Number from 1 to 100")  # NOQA
+async def volume(
+    interaction: discord.Interaction, vol: app_commands.Range[int, 1, 100] = 30
+):
+    guild = interaction.guild
+    if not guild:
+        return await interaction.response.send_message(
+            embed=await create_embed(
+                title="Error",
+                description="Could not get guild info",
+            )
+        )
+    volume = vol / 100
+    old_vol = server_collection.find_one_and_update(
+        {"id": guild.id}, {"$set": {"volume": volume}}
+    ).get('volume', 0.3)
+
+    return await interaction.response.send_message(
+        embed=await create_embed(
+            title="Volume Settings Updated",
+            description=f"Volume setting for `{guild.name}` has been changed from `{old_vol*100}` to `{vol}`",  # NOQA
+            color=discord.Color.green(),
+        )
+    )
+
+
 @client.tree.command(name="info", description="Get server info")
 async def info(interaction: discord.Interaction):
     guild = interaction.guild
@@ -510,6 +540,9 @@ async def info(interaction: discord.Interaction):
     embed = await create_embed(
         title="Server Info",
         description=f'Current settings for the `{data.get("name", "")}` server',
+    )
+    embed.add_field(
+        name="Volume", value=f'`{data.get("volume", 0.3)*100}`', inline=False
     )
     embed.add_field(
         name="Timezone", value=f'`{data.get("timezone", "Not found")}`', inline=False
