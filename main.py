@@ -30,6 +30,7 @@ FFMPEG_OPTIONS = {
     "options": "-vn",
 }
 MUSIC_FOLDER = "music"
+ART_FOLDER = "art"
 GAMES = ["animal-crossing", "new-horizons", "new-leaf", "wild-world"]
 
 db_client = MongoClient(os.environ["DB_URI"], server_api=ServerApi("1"))
@@ -189,7 +190,6 @@ async def play(interaction: Interaction):
     async def play_music():
         while True:
             if type(voice_client) != discord.VoiceClient:
-                print(type(voice_client))
                 return await interaction.response.send_message(
                     embed=await create_embed(
                         title="Error",
@@ -221,7 +221,11 @@ async def play(interaction: Interaction):
                 file = random.choice(os.listdir(f"{MUSIC_FOLDER}/kk"))
                 tune = f"{MUSIC_FOLDER}/kk/{file}"
                 name = "K.K."
+                img = discord.File(
+                    f"{ART_FOLDER}/{file.strip('.mp3')}.png", filename="art.png"
+                )
             else:
+                img = discord.File("logo.png", filename="art.png")
                 if server["game"] == "all":
                     game = random.choice(GAMES)
                 else:
@@ -257,7 +261,8 @@ async def play(interaction: Interaction):
                 color=discord.Color.green(),
             )
             embed.set_footer(text=f"{round(duration)}s | {tz}")
-            await voice_channel.send(embed=embed)
+            embed.set_thumbnail(url="attachment://art.png")
+            await voice_channel.send(file=img, embed=embed)
 
             await asyncio.sleep(duration)  # Sleep until the end of the track
 
@@ -509,7 +514,7 @@ async def volume(
     volume = vol / 100
     old_vol = server_collection.find_one_and_update(
         {"id": guild.id}, {"$set": {"volume": volume}}
-    ).get('volume', 0.3)
+    ).get("volume", 0.3)
 
     return await interaction.response.send_message(
         embed=await create_embed(
@@ -563,7 +568,7 @@ async def info(interaction: discord.Interaction):
 try:
     print("Pinging DB")
     db_client.admin.command("ping")
-    print("DB pinged successfully & vars set successfully - logging into the bot")
+    print("DB pinged successfully - logging into the bot")
     client.run(os.environ["BOT_TOKEN"])
 except BaseException as e:
     print(f"ERROR WITH LOGGING IN: {e}")
