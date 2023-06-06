@@ -225,11 +225,11 @@ async def play(interaction: Interaction):
                     f"{ART_FOLDER}/{file.strip('.mp3')}.png", filename="art.png"
                 )
             else:
-                img = discord.File("logo.png", filename="art.png")
                 if server["game"] == "all":
                     game = random.choice(GAMES)
                 else:
                     game = server["game"]
+                img = discord.File(f"{ART_FOLDER}/{game}.png", filename="art.png")
 
                 if server["weather"] == "live":
                     weather = await get_weather(server.get("area", "london"))
