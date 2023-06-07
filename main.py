@@ -1,14 +1,13 @@
 import asyncio
 import os
 import random
-import sys
 import typing
 
 import audiofile
 import discord
 import pytz
 from discord import FFmpegPCMAudio, Interaction, PCMVolumeTransformer, app_commands
-from discord.ext import commands, tasks
+from discord.ext import tasks
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -24,7 +23,6 @@ from utils import (
 
 load_dotenv()
 
-ADMINS = [915670836357247006, 658650587679948820, 1015577382826020894]
 FFMPEG_OPTIONS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
     "options": "-vn",
@@ -95,22 +93,6 @@ async def on_guild_join(guild):
 @client.event
 async def on_guild_remove(guild):
     server_collection.find_one_and_delete({"id": guild.id})
-
-
-@client.tree.command(name="restart", description="Restart the bot")
-@commands.has_guild_permissions(administrator=True)
-async def restart(interaction: Interaction):
-    if interaction.user.id not in ADMINS:
-        await interaction.response.send_message(embed=await create_embed())
-        return
-    await interaction.response.send_message(
-        embed=await create_embed(
-            title="Restarting",
-            description=f"Restart ordered by {interaction.user.mention}",
-        )
-    )
-
-    sys.exit()
 
 
 @client.tree.command(
