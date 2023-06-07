@@ -47,11 +47,11 @@ class Client(discord.Client):
         await self.tree.sync()
         print(f"Synced slash commands for {self.user}")
 
-    async def on_command_error(self, interaction: Interaction, error):
-        await handle_error(interaction, error, ephemeral=True)
-
 
 client = Client()
+
+client.tree.on_error = handle_error
+client.on_error = handle_error  # type: ignore
 
 
 @client.event
