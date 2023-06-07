@@ -69,7 +69,7 @@ async def get_weather(area: str = "London"):
 
 
 def get_weather_type(code: int):
-    with open("data/weather.json") as f:
+    with open("data/weather.json", "r") as f:
         data = json.load(f)
     for item in data:
         if item.get("code") == code:
