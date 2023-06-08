@@ -56,7 +56,7 @@ client.on_error = handle_error  # type: ignore
 
 @client.event
 async def on_ready():
-    print("Ready")
+    print(f"Ready in {len(client.guilds)} server(s)")
     time = get_string_time()[0]
     await client.change_presence(
         activity=discord.Activity(
@@ -306,39 +306,6 @@ async def stop(interaction: Interaction):
         )
 
 
-@client.tree.command(
-    name="time",
-    description="Get current time",
-)
-async def time(interaction: Interaction):
-    guild = interaction.guild
-    if not guild:
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Error",
-                description="Could not get guild info",
-            )
-        )
-
-    server = server_collection.find_one({"id": guild.id})
-    if server:
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Info",
-                description=f'Your timezone is set to `{server.get("timezone", None)}`',
-                color=discord.Color.yellow(),
-            )
-        )
-    else:
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Error",
-                description="Could not connect to the database. Please try again later",
-                color=discord.Color.red(),
-            )
-        )
-
-
 async def timezone_autocomplete(
     interaction: discord.Interaction,
     current: str,
@@ -351,7 +318,8 @@ async def timezone_autocomplete(
     ]
 
 
-@client.tree.command(name="timezone", description="Set your timezone")
+@client.tree.command(name="timezone", description="Set server timezone")
+@app_commands.default_permissions(manage_guild=True)
 @app_commands.autocomplete(timezone=timezone_autocomplete)
 @app_commands.describe(timezone="Your server's timezone")
 async def timezone(interaction: Interaction, timezone: str):
@@ -389,6 +357,7 @@ async def timezone(interaction: Interaction, timezone: str):
 
 
 @client.tree.command(name="kk", description="Set when you want KK songs to play")
+@app_commands.default_permissions(manage_guild=True)
 @app_commands.describe(setting="When you want KK songs to play")
 @app_commands.choices(
     setting=[
@@ -421,6 +390,7 @@ async def kk(interaction: discord.Interaction, setting: app_commands.Choice[str]
 
 
 @client.tree.command(name="weather", description="Choose weather type for music")
+@app_commands.default_permissions(manage_guild=True)
 @app_commands.describe(
     setting="Choose if you want live weather, random or specific type"
 )  # NOQA
@@ -457,6 +427,7 @@ async def weather(interaction: discord.Interaction, setting: app_commands.Choice
 
 
 @client.tree.command(name="area", description="Choose area for live weather")
+@app_commands.default_permissions(manage_guild=True)
 @app_commands.describe(area="Post/zip code or city name")  # NOQA
 async def area(interaction: discord.Interaction, area: str):
     guild = interaction.guild
