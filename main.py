@@ -7,7 +7,6 @@ import audiofile
 import discord
 import pytz
 from discord import FFmpegPCMAudio, Interaction, PCMVolumeTransformer, app_commands
-from discord.ext import tasks
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -57,20 +56,9 @@ client.on_error = handle_error  # type: ignore
 @client.event
 async def on_ready():
     print(f"Ready in {len(client.guilds)} server(s)")
-    time = get_string_time()[0]
     await client.change_presence(
         activity=discord.Activity(
-            type=discord.ActivityType.listening, name=f"AC {time} music"
-        )
-    )
-
-
-@tasks.loop(minutes=5)
-async def update_presence():
-    time = get_string_time()[0]
-    await client.change_presence(
-        activity=discord.Activity(
-            type=discord.ActivityType.listening, name=f"AC {time} music"
+            type=discord.ActivityType.listening, name="relaxing Animal Crossing music"
         )
     )
 
