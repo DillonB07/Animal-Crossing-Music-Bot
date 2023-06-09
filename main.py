@@ -69,7 +69,7 @@ async def on_guild_join(guild):
         "id": guild.id,
         "name": guild.name,
         "timezone": "Europe/London",
-        "volume": "0.3",
+        "volume": 0.3,
         "game": "all",
         "weather": "random",
         "kk": "default",
