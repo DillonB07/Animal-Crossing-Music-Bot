@@ -232,7 +232,7 @@ async def play(interaction: Interaction):
             )
             embed.set_footer(text=f"{round(duration)}s | {tz}")
             embed.set_thumbnail(url="attachment://art.png")
-            await voice_channel.send(file=img, embed=embed)
+            await voice_channel.send(file=img, embed=embed, delete_after=3600)
 
             await asyncio.sleep(duration)  # Sleep until the end of the track
 
