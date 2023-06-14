@@ -217,24 +217,31 @@ async def play(interaction: Interaction):
                 tune = f"{MUSIC_FOLDER}/{game}/{condition}/{time}.ogg"
                 name = " ".join(word.capitalize() for word in game.split("-"))
                 file = ""
+            try:
+                audio = FFmpegPCMAudio(tune)
+                audio = PCMVolumeTransformer(audio, volume=server.get("volume", 0.3))
+                voice_client.play(audio)
+                duration = audiofile.duration(tune)
 
-            audio = FFmpegPCMAudio(tune)
-            audio = PCMVolumeTransformer(audio, volume=server.get("volume", 0.3))
-            voice_client.play(audio)
-            duration = audiofile.duration(tune)
+                embed = await create_embed(
+                    title=f"Playing {name} Music",
+                    description=f"It is {time} and sunny"
+                    if regular
+                    else f"Playing {file.strip('.mp3')}",
+                    color=discord.Color.green(),
+                )
+                embed.set_footer(text=f"{round(duration)}s | {tz}")
+                embed.set_thumbnail(url="attachment://art.png")
+                await voice_channel.send(file=img, embed=embed, delete_after=600)
 
-            embed = await create_embed(
-                title=f"Playing {name} Music",
-                description=f"It is {time} and sunny"
-                if regular
-                else f"Playing {file.strip('.mp3')}",
-                color=discord.Color.green(),
-            )
-            embed.set_footer(text=f"{round(duration)}s | {tz}")
-            embed.set_thumbnail(url="attachment://art.png")
-            await voice_channel.send(file=img, embed=embed, delete_after=600)
-
-            await asyncio.sleep(duration)  # Sleep until the end of the track
+                await asyncio.sleep(duration)  # Sleep until the end of the track
+            except Exception as e:
+                embed = await create_embed(
+                    title="Error",
+                    description=f"Could not play music: {e}",
+                    color=discord.Color.red(),
+                )
+                await voice_channel.send(embed=embed)
 
         # Disconnect from the voice channel
         await voice_client.disconnect()
