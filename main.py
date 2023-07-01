@@ -146,8 +146,7 @@ async def play(interaction: Interaction):
     voice_channel = voice.channel
     if not voice_channel:
         raise NoVCError()
-    await voice_channel.connect(reconnect=True)
-    voice_client = guild.voice_client
+    await voice_channel.connect(reconnect=True, self_deaf=True)
 
     await interaction.response.send_message(
         embed=await create_embed(
@@ -159,19 +158,20 @@ async def play(interaction: Interaction):
 
     async def play_music():
         while True:
+            voice_client = guild.voice_client
+
+            if not voice_channel:
+                raise NoVCError()
+
             if type(voice_client) != discord.VoiceClient:
-                return await interaction.response.send_message(
+                return await voice_channel.send(
                     embed=await create_embed(
                         title="Error",
                         description="Could not get voice client",
                     )
                 )
-
             if voice_channel != voice_client.channel:
                 break
-
-            if not voice_channel:
-                raise NoVCError()
 
             server = server_collection.find_one({"id": guild.id})
             if not server:
@@ -272,33 +272,28 @@ async def stop(interaction: Interaction):
 
     voice_client = guild.voice_client
 
-    if type(voice_client) != discord.VoiceClient:
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Error",
-                description="Could not get voice client",
-            )
-        )
+    if (
+        type(voice_client) != discord.VoiceClient
+        or type(voice_client) != discord.VoiceProtocol
+    ):
+        if voice_client:
+            await voice_client.disconnect(force=False)
 
-    if voice_client and voice_client.is_playing():
-        voice_client.stop()
-        await voice_client.disconnect()
-
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Music Stopped",
-                description="The music playback has been stopped.",
-                color=discord.Color.green(),
+            return await interaction.response.send_message(
+                embed=await create_embed(
+                    title="Music Stopped",
+                    description="The music playback has been stopped.",
+                    color=discord.Color.green(),
+                )
             )
-        )
-    else:
-        return await interaction.response.send_message(
-            embed=await create_embed(
-                title="Not Playing",
-                description="There is no music currently playing.",
-                color=discord.Color.orange(),
+        else:
+            return await interaction.response.send_message(
+                embed=await create_embed(
+                    title="Not in vc",
+                    description="Couldn't disconnect as I'm not in vc silly",
+                    color=discord.Color.orange(),
+                )
             )
-        )
 
 
 async def timezone_autocomplete(
