@@ -1,24 +1,37 @@
-name: Docker Runner
+name: 'Deploy to GHCR'
 
 on:
-  push:
-    branches: [ master ]
-  workflow_dispatch:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
 
 jobs:
-  run:
-    runs-on: self-hosted
-    environment: production
+  push-store-image:
+        runs-on: ARM64
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
 
-    steps:
-      - uses: actions/checkout@v3
+            - name: Login to GHCR
+              uses: docker/login-action@v1
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Container
-        run: docker compose up -d --build
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          DB_URI: ${{secrets.DB_URI}}
-          WEATHER_TOKEN: ${{secrets.WEATHER_TOKEN}}
 
-      - name: Cleanup Unused Images
-        run: docker image prune -f
+            - name: Convert repository name to lowercase
+              id: repo
+              run: echo "::set-output name=repo::$(echo ${{ github.repository }} | awk '{print tolower($0)}')"
+
+            - name: Build and push
+              uses: docker/build-push-action@v2
+              with:
+                  context: .
+                  file: ./Dockerfile
+                  push: true
+                  tags: ghcr.io/${{ steps.repo.outputs.repo }}:latest
